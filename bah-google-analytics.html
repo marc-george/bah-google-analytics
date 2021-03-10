@@ -1,0 +1,137 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<script src="../lodash/dist/lodash.min.js"></script>
+
+<!--
+`bah-google-analytics`
+Google Analytics integrations for a Brilliant Apps Hub micro app
+
+@demo demo/index.html
+-->
+
+<dom-module id="bah-google-analytics">
+
+  <script>
+    Polymer({
+
+      is: 'bah-google-analytics',
+
+      properties: {
+        /**
+         * Production environment Google Analytics tracking ID
+         * */
+        productionTrackingId: {
+          type: String,
+          value: 'UA-93717109-1'
+        },
+
+        /**
+         * Testing environment Google Analytics tracking ID
+         * */
+        testTrackingId: {
+          type: String,
+          value: 'UA-93717109-2'
+        },
+
+        /**
+         * Current micro app
+         * */
+        _path: {
+          type: String
+        },
+
+        /**
+         * Current micro sub page
+         * */
+        _hash: {
+          type: String
+        }
+      },
+
+      observers: [
+        '_trackRoute(_path, _hash)'
+      ],
+
+      ready: function () {
+        this._routeChanged();
+      },
+
+      /**
+       * Attach listeners
+       * */
+      attached: function() {
+        this.listen(window, 'hashchange', '_routeChanged');
+        this.listen(window, 'location-changed', '_routeChanged');
+        this.listen(window, 'popstate', '_routeChanged');
+      },
+
+      /**
+       * Remove listeners
+       * */
+      detached: function() {
+        this.unlisten(window, 'hashchange', '_routeChanged');
+        this.unlisten(window, 'location-changed', '_routeChanged');
+        this.unlisten(window, 'popstate', '_routeChanged');
+      },
+
+      /**
+       * Handle events to receive route info
+       * */
+      _routeChanged: function () {
+        this._hash = window.decodeURIComponent(window.location.hash.substring(1));
+        this._path = window.decodeURIComponent(window.location.pathname);
+      },
+
+      /**
+       * Load the Google Analytics library or return if already loaded
+       * @return {Object}
+       * */
+      _initializeGa: function () {
+        // Load Google Analytics
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+        ga('create', this._getTrackingId(), 'auto');
+        console.info('Google Analytics initialized');
+        return ga;
+      },
+
+      /**
+       * Get the tracking ID.
+       * If 'test-' is found in the host, the test tracking ID
+       * will be used. Otherwise, the production tracking ID will
+       * be used.
+       * @return {String}
+       * */
+      _getTrackingId: function () {
+        if (location.host.includes('test-') || location.host.includes('localhost')) {
+          console.info('Testing site found');
+          return this.testTrackingId;
+        }
+        return this.productionTrackingId;
+      },
+
+      /**
+       * Set and send tracking information for Google Analytics
+       * @param {String} path
+       * @param {String} hash
+       * */
+      _trackRoute: function (path, hash) {
+        var page = _.startCase(location.pathname.replace(/(\/)+/g, '')) + ' - ' + _.startCase(location.hash.replace('#/', '').replace('-', ' ').replace(/(\/)+/g, ''));
+        var track =  {
+          page: location.pathname + location.hash,
+          title: page
+        };
+
+        ga = window.ga || this._initializeGa();
+
+        ga('set', track);
+        ga('send', 'pageview');
+        console.info('Sending page view for page ' + page);
+      }
+
+    });
+  </script>
+</dom-module>
