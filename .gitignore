@@ -1,0 +1,12 @@
+node_modules
+bower_components
+dist
+cdn
+docs
+coverage
+.idea
+*.iml
+.project
+npm-debug.log*
+*.log
+*.zip
